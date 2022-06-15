@@ -20,33 +20,33 @@ exports.getBlockTemplate = function() {
       'flags': ''
     },
     'coinbasevalue': 156250000,
-    "longpollid": "ac78aa6bdfbebf5cda80ae673eaa6c01177586f720dc0d75a7d326631d9d861496683",
-    "target": "00df3b0000000000000000000000000000000000000000000000000000000000",
-    "mintime": 1655317378,
+    'longpollid': 'ac78aa6bdfbebf5cda80ae673eaa6c01177586f720dc0d75a7d326631d9d861496683',
+    'target': '00df3b0000000000000000000000000000000000000000000000000000000000',
+    'mintime': 1655317378,
     'mutable': [
       'time',
       'transactions',
       'prevblock'
     ],
-    "noncerange": "00000000ffffffff",
-    "sigoplimit": 400000,
-    "sizelimit": 2000000,
-    "weightlimit": 2000000,
-    "curtime": 1655318189,
-    "bits": "2000df3b",
+    'noncerange': '00000000ffffffff',
+    'sigoplimit': 400000,
+    'sizelimit': 2000000,
+    'weightlimit': 2000000,
+    'curtime': 1655318189,
+    'bits': '2000df3b',
     'height': 1,
-    "znode": [
+    'znode': [
       {
-        "payee": "aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj",
-        "script": "76a9149ec92937568de295e3d93c87afb16254da8efdba88ac",
-        "amount": 312500000
+        'payee': 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj',
+        'script': '76a9149ec92937568de295e3d93c87afb16254da8efdba88ac',
+        'amount': 312500000
       }
     ],
-    "znode_payments_started": true,
-    "znode_payments_enforced": true,
-    "coinbase_payload": "0200797801001464b22fb2e961732d02ad7a41fa3f77cdf7617b8777352e560de0ca78e144573970ef251d855c564e477b08eb5c519750398489851a6925aec3946c026848f7",
-    "pprpcheader": "9cb8668d02e8aecfd7d34d4ed18d8fad9930b4fb340dd88eae3169ec092b4554",
-    "pprpcepoch": 74
+    'znode_payments_started': true,
+    'znode_payments_enforced': true,
+    'coinbase_payload': '0200797801001464b22fb2e961732d02ad7a41fa3f77cdf7617b8777352e560de0ca78e144573970ef251d855c564e477b08eb5c519750398489851a6925aec3946c026848f7',
+    'pprpcheader': '9cb8668d02e8aecfd7d34d4ed18d8fad9930b4fb340dd88eae3169ec092b4554',
+    'pprpcepoch': 74
   };
 };
 

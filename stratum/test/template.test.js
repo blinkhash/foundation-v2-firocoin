@@ -2,7 +2,6 @@ const Algorithms = require('../main/algorithms');
 const Template = require('../main/template');
 const config = require('../../configs/example');
 const testdata = require('../../daemon/test/daemon.mock');
-const utils = require('../main/utils');
 
 config.primary.address = 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj';
 config.primary.recipients = [];

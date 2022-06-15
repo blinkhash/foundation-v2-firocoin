@@ -115,7 +115,7 @@ const Transactions = function(config) {
 
     // Handle ZNodes (Evo Nodes)
     if (rpcData.znode_payments_started && rpcData.znode_payments_enforced) {
-      rpcData.znode.forEach(payee => {
+      rpcData.znode.forEach((payee) => {
         const payeeReward = payee.amount;
         let payeeScript;
         if (payee.script) payeeScript = Buffer.from(payee.script, 'hex');

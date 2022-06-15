@@ -57,7 +57,6 @@ const Manager = function(config, configMain) {
 
     // Main Submission Variables
     const identifier = _this.configMain.identifier || '';
-    const submitTime = Date.now() / 1000 | 0;
     const job = _this.validJobs[jobId];
 
     // Establish Hashing Algorithms
@@ -112,7 +111,7 @@ const Manager = function(config, configMain) {
 
     // Establish Share Information
     let blockValid = false;
-    let version = job.rpcData.version;
+    const version = job.rpcData.version;
     const extraNonce1Buffer = Buffer.from(submission.extraNonce1, 'hex');
     const nonceBuffer = utils.reverseBuffer(Buffer.from(submission.nonce, 'hex'));
     const mixHashBuffer = Buffer.from(submission.mixHash, 'hex');
