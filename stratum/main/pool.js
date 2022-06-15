@@ -108,7 +108,7 @@ const Pool = function(config, configMain, responseFn) {
 
   // Check Percentage of Blockchain Downloaded
   this.checkDownloaded = function(daemon) {
-    daemon.sendCommands([['getblockchaininfo', []]], false, (results) => {
+    daemon.sendCommands([['getinfo', []]], false, (results) => {
       const blocks = Math.max(0, results
         .flatMap((result) => result.response)
         .flatMap((response) => response.blocks));
@@ -309,8 +309,7 @@ const Pool = function(config, configMain, responseFn) {
     const commands = [
       ['validateaddress', [_this.config.primary.address]],
       ['getmininginfo', []],
-      ['getblockchaininfo', []],
-      ['getnetworkinfo', []]];
+      ['getinfo', []]];
 
     // Build Statistics/Settings w/ Daemon Response
     _this.primary.daemon.sendCommands(commands, true, (result) => {
@@ -339,12 +338,12 @@ const Pool = function(config, configMain, responseFn) {
       }
 
       // Check Current PoW Difficulty
-      let difficulty = resultData.getblockchaininfo.difficulty;
+      let difficulty = resultData.getinfo.difficulty;
       if (typeof(difficulty) == 'object') difficulty = difficulty['proof-of-work'];
 
       // Initialize Statistics/Settings
-      _this.settings.testnet = (resultData.getblockchaininfo.chain === 'test') ? true : false;
-      _this.statistics.connections = resultData.getnetworkinfo.connections;
+      _this.settings.testnet = (resultData.getinfo.testnet) ? true : false;
+      _this.statistics.connections = resultData.getinfo.connections;
       _this.statistics.difficulty = difficulty * Algorithms.firopow.multiplier;
       _this.config.settings.testnet = _this.settings.testnet;
 

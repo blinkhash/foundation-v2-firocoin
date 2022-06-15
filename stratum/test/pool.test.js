@@ -5,8 +5,8 @@ const events = require('events');
 const nock = require('nock');
 const testdata = require('../../daemon/test/daemon.mock');
 
-config.primary.address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-config.primary.recipients[0].address = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2';
+config.primary.address = 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj';
+config.primary.recipients[0].address = 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj';
 
 const auxiliaryConfig = {
   'enabled': true,
@@ -18,7 +18,7 @@ const auxiliaryConfig = {
 
 const auxiliaryDaemons = [{
   'host': '127.0.0.1',
-  'port': '8336',
+  'port': '8886',
   'username': 'foundation',
   'password': 'foundation'
 }];
@@ -30,14 +30,14 @@ process.env.forkId = '0';
 ////////////////////////////////////////////////////////////////////////////////
 
 function mockSetupDaemons(pool, callback) {
-  nock('http://127.0.0.1:8332')
+  nock('http://127.0.0.1:8888')
     .post('/', (body) => body.method === 'getpeerinfo')
     .reply(200, JSON.stringify({
       id: 'nocktest',
       error: null,
       result: null,
     }));
-  nock('http://127.0.0.1:8336')
+  nock('http://127.0.0.1:8886')
     .post('/', (body) => body.method === 'getpeerinfo')
     .reply(200, JSON.stringify({
       id: 'nocktest',
@@ -48,18 +48,17 @@ function mockSetupDaemons(pool, callback) {
 }
 
 function mockSetupSettings(pool, callback) {
-  nock('http://127.0.0.1:8332')
+  nock('http://127.0.0.1:8888')
     .post('/').reply(200, JSON.stringify([
-      { id: 'nocktest', error: null, result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }},
+      { id: 'nocktest', error: null, result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }},
       { id: 'nocktest', error: null, result: { networkhashps: 0 }},
-      { id: 'nocktest', error: null, result: { chain: 'main', difficulty: 0 }},
-      { id: 'nocktest', error: null, result: { protocolversion: 1, connections: 1 }},
+      { id: 'nocktest', error: null, result: { difficulty: 0, testnet: false, connections: 10, }},
     ]));
   pool.setupSettings(() => callback());
 }
 
 function mockSetupPrimaryBlockchain(pool, callback) {
-  nock('http://127.0.0.1:8332')
+  nock('http://127.0.0.1:8888')
     .post('/', (body) => body.method === 'getblocktemplate')
     .reply(200, JSON.stringify({
       id: 'nocktest',
@@ -71,7 +70,7 @@ function mockSetupPrimaryBlockchain(pool, callback) {
 
 function mockSetupAuxiliaryBlockchain(pool, callback) {
   if (pool.auxiliary.enabled) {
-    nock('http://127.0.0.1:8336')
+    nock('http://127.0.0.1:8886')
       .post('/', (body) => body.method === 'getauxblock')
       .reply(200, JSON.stringify({
         id: 'nocktest',
@@ -83,7 +82,7 @@ function mockSetupAuxiliaryBlockchain(pool, callback) {
 }
 
 function mockSetupFirstJob(pool, callback) {
-  nock('http://127.0.0.1:8332')
+  nock('http://127.0.0.1:8888')
     .post('/', (body) => body.method === 'getblocktemplate')
     .reply(200, JSON.stringify({
       id: 'nocktest',
@@ -91,7 +90,7 @@ function mockSetupFirstJob(pool, callback) {
       result: testdata.getBlockTemplate(),
     }));
   if (pool.auxiliary.enabled) {
-    nock('http://127.0.0.1:8336')
+    nock('http://127.0.0.1:8886')
       .post('/', (body) => body.method === 'getauxblock')
       .reply(200, JSON.stringify({
         id: 'nocktest',
@@ -120,7 +119,7 @@ function mockClient() {
   const socket = mockSocket();
   const client = new events.EventEmitter();
   client.id = 'test';
-  client.addrPrimary = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2';
+  client.addrPrimary = 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj';
   client.previousDifficulty = 0;
   client.difficulty = 1,
   client.extraNonce1 = 0,
@@ -139,13 +138,13 @@ function mockClient() {
 describe('Test pool functionality', () => {
 
   let configCopy, configMainCopy, rpcDataCopy, auxDataCopy;
-  let blockchainDataCopy, peerDataCopy;
+  let getInfoDataCopy, peerDataCopy;
   beforeEach(() => {
     configCopy = JSON.parse(JSON.stringify(config));
     configMainCopy = JSON.parse(JSON.stringify(configMain));
     rpcDataCopy = JSON.parse(JSON.stringify(testdata.getBlockTemplate()));
     auxDataCopy = JSON.parse(JSON.stringify(testdata.getAuxBlock()));
-    blockchainDataCopy = JSON.parse(JSON.stringify(testdata.getBlockchainInfo()));
+    getInfoDataCopy = JSON.parse(JSON.stringify(testdata.getInfo()));
     peerDataCopy = JSON.parse(JSON.stringify(testdata.getPeerInfo()));
   });
 
@@ -204,15 +203,14 @@ describe('Test pool functionality', () => {
   test('Test pool settings setup [2]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/').reply(200, JSON.stringify([
-          { id: 'nocktest', error: null, result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }},
+          { id: 'nocktest', error: null, result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }},
           { id: 'nocktest', error: null, result: { networkhashps: 0 }},
-          { id: 'nocktest', error: null, result: { chain: 'main', difficulty: 0 }},
-          { id: 'nocktest', error: null, result: { protocolversion: 1, connections: 1 }},
+          { id: 'nocktest', error: null, result: { difficulty: 0, testnet: false, connections: 10, }},
         ]));
       pool.setupSettings(() => {
-        expect(configCopy.primary.address).toBe('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
+        expect(configCopy.primary.address).toBe('aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj');
         expect(pool.settings.testnet).toBe(false);
         expect(typeof pool.statistics).toBe('object');
         done();
@@ -228,12 +226,11 @@ describe('Test pool functionality', () => {
       done();
     });
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/').reply(200, JSON.stringify([
-          { id: 'nocktest', error: true, result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }},
+          { id: 'nocktest', error: true, result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }},
           { id: 'nocktest', error: null, result: { networkhashps: 0 }},
-          { id: 'nocktest', error: null, result: { chain: 'main', difficulty: 0 }},
-          { id: 'nocktest', error: null, result: { protocolversion: 1, connections: 1 }},
+          { id: 'nocktest', error: null, result: { difficulty: 0, testnet: false, connections: 10, }},
         ]));
       pool.setupSettings(() => {});
     });
@@ -247,12 +244,11 @@ describe('Test pool functionality', () => {
       done();
     });
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/').reply(200, JSON.stringify([
-          { id: 'nocktest', error: null, result: { isvalid: false, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }},
+          { id: 'nocktest', error: null, result: { isvalid: false, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }},
           { id: 'nocktest', error: null, result: { networkhashps: 0 }},
-          { id: 'nocktest', error: null, result: { chain: 'main', difficulty: 0 }},
-          { id: 'nocktest', error: null, result: { protocolversion: 1, connections: 1 }},
+          { id: 'nocktest', error: null, result: { difficulty: 0, testnet: false, connections: 10, }},
         ]));
       pool.setupSettings(() => {});
     });
@@ -261,15 +257,14 @@ describe('Test pool functionality', () => {
   test('Test pool settings setup [5]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/').reply(200, JSON.stringify([
-          { id: 'nocktest', error: null, result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }},
+          { id: 'nocktest', error: null, result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }},
           { id: 'nocktest', error: null, result: { networkhashps: 0 }},
-          { id: 'nocktest', error: null, result: { chain: 'main', difficulty: { 'proof-of-work': 8, 'proof-of-stake': 10 }}},
-          { id: 'nocktest', error: null, result: { protocolversion: 1, connections: 1 }},
+          { id: 'nocktest', error: null, result: { difficulty: { 'proof-of-work': 8, 'proof-of-stake': 10 }, testnet: false, connections: 10, }},
         ]));
       pool.setupSettings(() => {
-        expect(configCopy.primary.address).toBe('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
+        expect(configCopy.primary.address).toBe('aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj');
         expect(pool.settings.testnet).toBe(false);
         expect(pool.statistics.difficulty).toBe(8);
         done();
@@ -280,15 +275,14 @@ describe('Test pool functionality', () => {
   test('Test pool settings setup [6]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/').reply(200, JSON.stringify([
-          { id: 'nocktest', error: null, result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }},
+          { id: 'nocktest', error: null, result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }},
           { id: 'nocktest', error: null, result: { networkhashps: 0 }},
-          { id: 'nocktest', error: null, result: { chain: 'test', difficulty: { 'proof-of-work': 8, 'proof-of-stake': 10 }}},
-          { id: 'nocktest', error: null, result: { protocolversion: 1, connections: 1 }},
+          { id: 'nocktest', error: null, result: { difficulty: { 'proof-of-work': 8, 'proof-of-stake': 10 }, testnet: true, connections: 10, }},
         ]));
       pool.setupSettings(() => {
-        expect(configCopy.primary.address).toBe('bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq');
+        expect(configCopy.primary.address).toBe('aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj');
         expect(pool.settings.testnet).toBe(true);
         expect(pool.statistics.difficulty).toBe(8);
         done();
@@ -366,7 +360,7 @@ describe('Test pool functionality', () => {
     });
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'submitblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -426,7 +420,7 @@ describe('Test pool functionality', () => {
     });
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'submitblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -484,7 +478,7 @@ describe('Test pool functionality', () => {
       response.push([type, text]);
       if (response.length === 2) {
         expect(response[0][0]).toBe('special');
-        expect(response[0][1]).toBe('Submitted a primary block (Bitcoin:1) successfully to Bitcoin\'s daemon instance(s)');
+        expect(response[0][1]).toBe('Submitted a primary block (Firocoin:1) successfully to Firocoin\'s daemon instance(s)');
         expect(response[1][0]).toBe('error');
         expect(response[1][1]).toBe('The block was rejected by the network');
         done();
@@ -493,7 +487,7 @@ describe('Test pool functionality', () => {
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
         pool.on('pool.share', () => {
-          nock('http://127.0.0.1:8332')
+          nock('http://127.0.0.1:8888')
             .post('/', (body) => body.method === 'getblocktemplate')
             .reply(200, JSON.stringify({
               id: 'nocktest',
@@ -501,14 +495,14 @@ describe('Test pool functionality', () => {
               result: rpcDataCopy,
             }));
         });
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'submitblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: null,
             result: null,
           }));
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'getblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -566,7 +560,7 @@ describe('Test pool functionality', () => {
       response.push([type, text]);
       if (response.length === 2) {
         expect(response[0][0]).toBe('special');
-        expect(response[0][1]).toBe('Submitted a primary block (Bitcoin:1) successfully to Bitcoin\'s daemon instance(s)');
+        expect(response[0][1]).toBe('Submitted a primary block (Firocoin:1) successfully to Firocoin\'s daemon instance(s)');
         expect(response[1][0]).toBe('special');
         expect(response[1][1]).toBe('Block notification via RPC after primary block submission');
         done();
@@ -575,7 +569,7 @@ describe('Test pool functionality', () => {
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
         pool.on('pool.share', () => {
-          nock('http://127.0.0.1:8332')
+          nock('http://127.0.0.1:8888')
             .post('/', (body) => body.method === 'getblocktemplate')
             .reply(200, JSON.stringify({
               id: 'nocktest',
@@ -583,14 +577,14 @@ describe('Test pool functionality', () => {
               result: rpcDataCopy,
             }));
         });
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'submitblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: null,
             result: null,
           }));
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'getblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -652,7 +646,7 @@ describe('Test pool functionality', () => {
       response.push([type, text]);
       if (response.length === 2) {
         expect(response[0][0]).toBe('special');
-        expect(response[0][1]).toBe('Submitted a primary block (Bitcoin:1) successfully to Bitcoin\'s daemon instance(s)');
+        expect(response[0][1]).toBe('Submitted a primary block (Firocoin:1) successfully to Firocoin\'s daemon instance(s)');
         expect(response[1][0]).toBe('error');
         expect(response[1][1]).toBe('RPC error with primary daemon instance (127.0.0.1) when requesting a primary template update: true');
         done();
@@ -661,7 +655,7 @@ describe('Test pool functionality', () => {
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
         pool.on('pool.share', () => {
-          nock('http://127.0.0.1:8332')
+          nock('http://127.0.0.1:8888')
             .post('/', (body) => body.method === 'getblocktemplate')
             .reply(200, JSON.stringify({
               id: 'nocktest',
@@ -669,14 +663,14 @@ describe('Test pool functionality', () => {
               result: null,
             }));
         });
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'submitblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: null,
             result: null,
           }));
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'getblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -741,7 +735,7 @@ describe('Test pool functionality', () => {
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
         pool.on('pool.share', () => {
-          nock('http://127.0.0.1:8332')
+          nock('http://127.0.0.1:8888')
             .post('/', (body) => body.method === 'getblocktemplate')
             .reply(200, JSON.stringify({
               id: 'nocktest',
@@ -804,7 +798,7 @@ describe('Test pool functionality', () => {
       mockSetupSettings(pool, () => {
         pool.on('pool.share', (data, type) => {
           expect(type).toBe('stale');
-          nock('http://127.0.0.1:8332')
+          nock('http://127.0.0.1:8888')
             .post('/', (body) => body.method === 'getblocktemplate')
             .reply(200, JSON.stringify({
               id: 'nocktest',
@@ -839,7 +833,7 @@ describe('Test pool functionality', () => {
       mockSetupSettings(pool, () => {
         pool.on('pool.share', (data, type) => {
           expect(type).toBe('invalid');
-          nock('http://127.0.0.1:8332')
+          nock('http://127.0.0.1:8888')
             .post('/', (body) => body.method === 'getblocktemplate')
             .reply(200, JSON.stringify({
               id: 'nocktest',
@@ -867,7 +861,7 @@ describe('Test pool functionality', () => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'getblocktemplate')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -890,21 +884,21 @@ describe('Test pool functionality', () => {
     });
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'getblocktemplate')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: { code: -10 },
             result: null,
           }));
-        nock('http://127.0.0.1:8332')
-          .post('/', (body) => body.method === 'getblockchaininfo')
+        nock('http://127.0.0.1:8888')
+          .post('/', (body) => body.method === 'getinfo')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: null,
-            result: blockchainDataCopy,
+            result: getInfoDataCopy,
           }));
-        nock('http://127.0.0.1:8332')
+        nock('http://127.0.0.1:8888')
           .post('/', (body) => body.method === 'getpeerinfo')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -922,7 +916,7 @@ describe('Test pool functionality', () => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8336')
+        nock('http://127.0.0.1:8886')
           .post('/', (body) => body.method === 'getauxblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -947,21 +941,21 @@ describe('Test pool functionality', () => {
     });
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8336')
+        nock('http://127.0.0.1:8886')
           .post('/', (body) => body.method === 'getauxblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: { code: -10 },
             result: null,
           }));
-        nock('http://127.0.0.1:8336')
-          .post('/', (body) => body.method === 'getblockchaininfo')
+        nock('http://127.0.0.1:8886')
+          .post('/', (body) => body.method === 'getinfo')
           .reply(200, JSON.stringify({
             id: 'nocktest',
             error: null,
-            result: blockchainDataCopy,
+            result: getInfoDataCopy,
           }));
-        nock('http://127.0.0.1:8336')
+        nock('http://127.0.0.1:8886')
           .post('/', (body) => body.method === 'getpeerinfo')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -977,7 +971,7 @@ describe('Test pool functionality', () => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
       mockSetupSettings(pool, () => {
-        nock('http://127.0.0.1:8336')
+        nock('http://127.0.0.1:8886')
           .post('/', (body) => body.method === 'getauxblock')
           .reply(200, JSON.stringify({
             id: 'nocktest',
@@ -998,7 +992,7 @@ describe('Test pool functionality', () => {
         pool.setupManager();
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
-            nock('http://127.0.0.1:8332')
+            nock('http://127.0.0.1:8888')
               .post('/', (body) => body.method === 'getblocktemplate')
               .reply(200, JSON.stringify({
                 id: 'nocktest',
@@ -1034,7 +1028,7 @@ describe('Test pool functionality', () => {
         pool.setupManager();
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
-            nock('http://127.0.0.1:8332')
+            nock('http://127.0.0.1:8888')
               .post('/', (body) => body.method === 'getblocktemplate')
               .reply(200, JSON.stringify({
                 id: 'nocktest',
@@ -1060,7 +1054,7 @@ describe('Test pool functionality', () => {
         pool.setupManager();
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
-            nock('http://127.0.0.1:8332')
+            nock('http://127.0.0.1:8888')
               .post('/', (body) => body.method === 'getblocktemplate')
               .reply(200, JSON.stringify({
                 id: 'nocktest',
@@ -1082,7 +1076,7 @@ describe('Test pool functionality', () => {
         pool.statistics.difficulty = 400;
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
-            nock('http://127.0.0.1:8332')
+            nock('http://127.0.0.1:8888')
               .post('/', (body) => body.method === 'getblocktemplate')
               .reply(200, JSON.stringify({
                 id: 'nocktest',
@@ -1107,7 +1101,7 @@ describe('Test pool functionality', () => {
         expect(response[0][0]).toBe('warning');
         expect(response[0][1]).toBe('Network difficulty (0) is lower than the difficulty on port 3002 (32)');
         expect(response[1][0]).toBe('log');
-        expect(response[1][1]).toBe('Requested template from primary chain (Bitcoin:2) via RPC polling');
+        expect(response[1][1]).toBe('Requested template from primary chain (Firocoin:2) via RPC polling');
         done();
       }
     });
@@ -1117,7 +1111,7 @@ describe('Test pool functionality', () => {
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
             mockSetupFirstJob(pool, () => {
-              nock('http://127.0.0.1:8332')
+              nock('http://127.0.0.1:8888')
                 .persist()
                 .post('/', (body) => body.method === 'getblocktemplate')
                 .reply(200, JSON.stringify({
@@ -1146,7 +1140,7 @@ describe('Test pool functionality', () => {
         expect(response[0][0]).toBe('warning');
         expect(response[0][1]).toBe('Network difficulty (0) is lower than the difficulty on port 3002 (32)');
         expect(response[1][0]).toBe('log');
-        expect(response[1][1]).toBe('Requested template from primary chain (Bitcoin:1) via RPC polling');
+        expect(response[1][1]).toBe('Requested template from primary chain (Firocoin:1) via RPC polling');
         expect(response[2][0]).toBe('log');
         expect(response[2][1]).toBe('Requested template from auxiliary chain (Namecoin:2) via RPC polling');
         done();
@@ -1158,7 +1152,7 @@ describe('Test pool functionality', () => {
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
             mockSetupFirstJob(pool, () => {
-              nock('http://127.0.0.1:8332')
+              nock('http://127.0.0.1:8888')
                 .persist()
                 .post('/', (body) => body.method === 'getblocktemplate')
                 .reply(200, JSON.stringify({
@@ -1166,7 +1160,7 @@ describe('Test pool functionality', () => {
                   error: null,
                   result: rpcDataCopy,
                 }));
-              nock('http://127.0.0.1:8336')
+              nock('http://127.0.0.1:8886')
                 .persist()
                 .post('/', (body) => body.method === 'getauxblock')
                 .reply(200, JSON.stringify({
@@ -1205,7 +1199,7 @@ describe('Test pool functionality', () => {
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
             mockSetupFirstJob(pool, () => {
-              nock('http://127.0.0.1:8332')
+              nock('http://127.0.0.1:8888')
                 .persist()
                 .post('/', (body) => body.method === 'getblocktemplate')
                 .reply(200, JSON.stringify({
@@ -1213,7 +1207,7 @@ describe('Test pool functionality', () => {
                   error: null,
                   result: rpcDataCopy,
                 }));
-              nock('http://127.0.0.1:8336')
+              nock('http://127.0.0.1:8886')
                 .persist()
                 .post('/', (body) => body.method === 'getauxblock')
                 .reply(200, JSON.stringify({
@@ -1244,7 +1238,7 @@ describe('Test pool functionality', () => {
         expect(response[0][0]).toBe('warning');
         expect(response[0][1]).toBe('Network difficulty (0) is lower than the difficulty on port 3002 (32)');
         expect(response[1][0]).toBe('log');
-        expect(response[1][1]).toBe('Requested template from primary chain (Bitcoin:1) via RPC polling');
+        expect(response[1][1]).toBe('Requested template from primary chain (Firocoin:1) via RPC polling');
         expect(response[2][0]).toBe('log');
         expect(response[2][1]).toBe('Requested template from auxiliary chain (Namecoin:2) via RPC polling');
         done();
@@ -1256,7 +1250,7 @@ describe('Test pool functionality', () => {
         mockSetupPrimaryBlockchain(pool, () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
             mockSetupFirstJob(pool, () => {
-              nock('http://127.0.0.1:8332')
+              nock('http://127.0.0.1:8888')
                 .persist()
                 .post('/', (body) => body.method === 'getblocktemplate')
                 .reply(200, JSON.stringify({
@@ -1264,7 +1258,7 @@ describe('Test pool functionality', () => {
                   error: null,
                   result: rpcDataCopy,
                 }));
-              nock('http://127.0.0.1:8336')
+              nock('http://127.0.0.1:8886')
                 .persist()
                 .post('/', (body) => body.method === 'getauxblock')
                 .reply(200, JSON.stringify({
@@ -1324,7 +1318,7 @@ describe('Test pool functionality', () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
             mockSetupFirstJob(pool, () => {
               pool.setupNetwork(() => {
-                nock('http://127.0.0.1:8332')
+                nock('http://127.0.0.1:8888')
                   .post('/', (body) => body.method === 'getblocktemplate')
                   .reply(200, JSON.stringify({
                     id: 'nocktest',
@@ -1361,7 +1355,7 @@ describe('Test pool functionality', () => {
           mockSetupAuxiliaryBlockchain(pool, () => {
             mockSetupFirstJob(pool, () => {
               pool.setupNetwork(() => {
-                nock('http://127.0.0.1:8332')
+                nock('http://127.0.0.1:8888')
                   .post('/', (body) => body.method === 'getblocktemplate')
                   .reply(200, JSON.stringify({
                     id: 'nocktest',
@@ -1434,7 +1428,7 @@ describe('Test pool functionality', () => {
         expect(response[0][0]).toBe('warning');
         expect(response[0][1]).toBe('Network difficulty (0) is lower than the difficulty on port 3002 (32)');
         expect(response[1][0]).toBe('log');
-        expect(response[1][1]).toBe('Difficulty update queued for worker: 1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2 (8)');
+        expect(response[1][1]).toBe('Difficulty update queued for worker: aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj (8)');
         pool.network.stopNetwork();
       }
     });
@@ -1468,7 +1462,7 @@ describe('Test pool functionality', () => {
         expect(response[0][0]).toBe('warning');
         expect(response[0][1]).toBe('Network difficulty (0) is lower than the difficulty on port 3002 (32)');
         expect(response[1][0]).toBe('log');
-        expect(response[1][1]).toBe('Difficulty updated successfully for worker: 1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2 (8)');
+        expect(response[1][1]).toBe('Difficulty updated successfully for worker: aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj (8)');
         pool.network.stopNetwork();
       }
     });
@@ -1946,14 +1940,14 @@ describe('Test pool functionality', () => {
   test('Test pool stratum authentication [1]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.checkWorker(pool.primary.daemon, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', (valid) => {
+      pool.checkWorker(pool.primary.daemon, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', (valid) => {
         expect(valid).toBe(true);
         done();
       });
@@ -1963,14 +1957,14 @@ describe('Test pool functionality', () => {
   test('Test pool stratum authentication [2]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.checkWorker(pool.primary.daemon, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq.worker1', (valid) => {
+      pool.checkWorker(pool.primary.daemon, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj.worker1', (valid) => {
         expect(valid).toBe(true);
         done();
       });
@@ -1980,14 +1974,14 @@ describe('Test pool functionality', () => {
   test('Test pool stratum authentication [3]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.checkPrimaryWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', (valid) => {
+      pool.checkPrimaryWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', (valid) => {
         expect(valid).toBe(true);
         done();
       });
@@ -1997,14 +1991,14 @@ describe('Test pool functionality', () => {
   test('Test pool stratum authentication [4]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: false, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: false, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.checkPrimaryWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', () => {}, (result) => {
+      pool.checkPrimaryWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', () => {}, (result) => {
         expect(result).toStrictEqual({ 'error': null, 'authorized': false, 'disconnect': false });
         done();
       });
@@ -2014,14 +2008,14 @@ describe('Test pool functionality', () => {
   test('Test pool stratum authentication [5]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: true,
           result: null
         }));
-      pool.checkPrimaryWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', () => {}, (result) => {
+      pool.checkPrimaryWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', () => {}, (result) => {
         expect(result).toStrictEqual({ 'error': null, 'authorized': false, 'disconnect': false });
         done();
       });
@@ -2033,14 +2027,14 @@ describe('Test pool functionality', () => {
     configCopy.auxiliary.daemons = auxiliaryDaemons;
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8336')
+      nock('http://127.0.0.1:8886')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.checkAuxiliaryWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', (valid) => {
+      pool.checkAuxiliaryWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', (valid) => {
         expect(valid).toBe(true);
         done();
       });
@@ -2052,14 +2046,14 @@ describe('Test pool functionality', () => {
     configCopy.auxiliary.daemons = auxiliaryDaemons;
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8336')
+      nock('http://127.0.0.1:8886')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: false, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: false, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.checkAuxiliaryWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', () => {}, (result) => {
+      pool.checkAuxiliaryWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', () => {}, (result) => {
         expect(result).toStrictEqual({ 'error': null, 'authorized': false, 'disconnect': false });
         done();
       });
@@ -2091,14 +2085,14 @@ describe('Test pool functionality', () => {
   test('Test pool stratum authentication [10]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.authorizeWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', null, 'test', (result) => {
+      pool.authorizeWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', null, 'test', (result) => {
         expect(result).toStrictEqual({ 'error': null, 'authorized': true, 'disconnect': false });
         done();
       });
@@ -2110,21 +2104,21 @@ describe('Test pool functionality', () => {
     configCopy.auxiliary.daemons = auxiliaryDaemons;
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      nock('http://127.0.0.1:8336')
+      nock('http://127.0.0.1:8886')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      pool.authorizeWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', 'test', (result) => {
+      pool.authorizeWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', 'test', (result) => {
         expect(result).toStrictEqual({ 'error': null, 'authorized': true, 'disconnect': false });
         done();
       });
@@ -2136,21 +2130,21 @@ describe('Test pool functionality', () => {
     configCopy.auxiliary.daemons = auxiliaryDaemons;
     const pool = new Pool(configCopy, configMainCopy, () => {});
     mockSetupDaemons(pool, () => {
-      nock('http://127.0.0.1:8332')
+      nock('http://127.0.0.1:8888')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: null,
-          result: { isvalid: true, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq' }
+          result: { isvalid: true, address: 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj' }
         }));
-      nock('http://127.0.0.1:8336')
+      nock('http://127.0.0.1:8886')
         .post('/', (body) => body.method === 'validateaddress')
         .reply(200, JSON.stringify({
           id: 'nocktest',
           error: true,
           result: null
         }));
-      pool.authorizeWorker('0.0.0.0', 3001, 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', 'test', (result) => {
+      pool.authorizeWorker('0.0.0.0', 3001, 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', 'aKoefNw7AeYKosEYwjCi4RQpVhBWRwU5Mj', 'test', (result) => {
         expect(result).toStrictEqual({ 'error': null, 'authorized': false, 'disconnect': false });
         done();
       });
