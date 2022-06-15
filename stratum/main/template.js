@@ -48,7 +48,7 @@ const Template = function(jobId, config, rpcData, placeholder) {
   };
 
   // Manage Serializing Block Objects
-  this.handleBlocks = function(header, coinbase) {
+  this.handleBlocks = function(header, coinbase, nonce, mixHash) {
     return Buffer.concat([
       header,
       nonce,

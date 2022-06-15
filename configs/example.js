@@ -1,6 +1,6 @@
 /*
  *
- * Example (Bitcoin)
+ * Example (Firocoin)
  *
  */
 

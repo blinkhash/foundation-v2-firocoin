@@ -106,7 +106,7 @@ const Manager = function(config, configMain) {
     if (!addrPrimary) {
       return shareError([20, 'worker address isn\'t set properly']);
     }
-    if (!job.registerSubmit([submission.extraNonce1, submission.nonce, submission.headerHash, submission.mixHash])) {
+    if (!job.handleSubmissions([submission.extraNonce1, submission.nonce, submission.headerHash, submission.mixHash])) {
       return shareError([22, 'duplicate share']);
     }
 
@@ -138,7 +138,7 @@ const Manager = function(config, configMain) {
     // Check Validity of Solution
     const hashOutputBuffer = Buffer.alloc(32);
     const isValid = hashDigest(headerHashBuffer, nonceBuffer, job.rpcData.height, mixHashBuffer, hashOutputBuffer);
-    const headerBigInt = utils.bufferToBigInt(headerHash);
+    const headerBigInt = utils.bufferToBigInt(hashOutputBuffer);
 
     // Check if Submission is Valid Solution
     if (!isValid) {
@@ -153,7 +153,6 @@ const Manager = function(config, configMain) {
     // Combine Header/Merkle/Nonce Buffers
     const combinedBuffer = Buffer.alloc(120);
     headerBuffer.copy(combinedBuffer);
-    merkleRoot.copy(combinedBuffer, 36);
     nonceBuffer.copy(combinedBuffer, 80);
     utils.reverseBuffer(mixHashBuffer).copy(combinedBuffer, 88);
 
