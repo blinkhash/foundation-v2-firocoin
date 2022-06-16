@@ -128,7 +128,6 @@ const Transactions = function(config) {
       });
     }
 
-
     // Handle Founder Rewards
     founder.forEach((payee) => {
       const founderReward = payee.amount;
