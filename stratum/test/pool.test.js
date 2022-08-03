@@ -138,7 +138,7 @@ function mockClient() {
 describe('Test pool functionality', () => {
 
   let configCopy, configMainCopy, rpcDataCopy, auxDataCopy;
-  let getInfoDataCopy, peerDataCopy;
+  let blockchainDataCopy, getInfoDataCopy, peerDataCopy;
   beforeEach(() => {
     configCopy = JSON.parse(JSON.stringify(config));
     configMainCopy = JSON.parse(JSON.stringify(configMain));
@@ -324,7 +324,7 @@ describe('Test pool functionality', () => {
         pool.setupManager();
         expect(typeof pool.manager).toBe('object');
         expect(typeof pool.manager.handleTemplate).toBe('function');
-        expect(pool.manager._eventsCount).toBe(2);
+        expect(pool.manager._eventsCount).toBe(3);
         done();
       });
     });
@@ -353,6 +353,28 @@ describe('Test pool functionality', () => {
   });
 
   test('Test pool manager setup [4]', (done) => {
+    const pool = new Pool(configCopy, configMainCopy, () => {});
+    mockSetupDaemons(pool, () => {
+      mockSetupSettings(pool, () => {
+        pool.setupManager();
+        pool.network = { broadcastMiningJobs: () => done() };
+        pool.manager.emit('manager.block.updated', rpcDataCopy);
+      });
+    });
+  });
+
+  test('Test pool manager setup [5]', (done) => {
+    const pool = new Pool(configCopy, configMainCopy, () => {});
+    mockSetupDaemons(pool, () => {
+      mockSetupSettings(pool, () => {
+        pool.setupManager();
+        pool.manager.emit('manager.block.updated', rpcDataCopy);
+        done();
+      });
+    });
+  });
+
+  test('Test pool manager setup [6]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
       expect(type).toBe('error');
@@ -412,7 +434,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [5]', (done) => {
+  test('Test pool manager setup [7]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
       expect(type).toBe('error');
@@ -472,7 +494,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [6]', (done) => {
+  test('Test pool manager setup [8]', (done) => {
     const response = [];
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
@@ -555,7 +577,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [7]', (done) => {
+  test('Test pool manager setup [9]', (done) => {
     const response = [];
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
@@ -642,7 +664,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [8]', (done) => {
+  test('Test pool manager setup [10]', (done) => {
     const response = [];
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
@@ -729,7 +751,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [9]', (done) => {
+  test('Test pool manager setup [11]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
       expect(type).toBe('error');
@@ -792,7 +814,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [10]', (done) => {
+  test('Test pool manager setup [12]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
       expect(type).toBe('error');
@@ -827,7 +849,7 @@ describe('Test pool functionality', () => {
     });
   });
 
-  test('Test pool manager setup [11]', (done) => {
+  test('Test pool manager setup [13]', (done) => {
     const pool = new Pool(configCopy, configMainCopy, () => {});
     pool.on('pool.log', (type, text) => {
       expect(type).toBe('error');
