@@ -74,8 +74,7 @@ const Transactions = function(config, rpcData) {
     }
 
     // Calculate Coin Block Reward
-    const fees = _this.rpcData.transactions.reduce((sum, tx) => sum + tx.fee, 0);
-    let reward = _this.rpcData.coinbasevalue + fees;
+    let reward = _this.rpcData.coinbasevalue;
     const founder = !_this.config.settings.testnet ?
       _this.founderMainnet :
       _this.founderTestnet;
