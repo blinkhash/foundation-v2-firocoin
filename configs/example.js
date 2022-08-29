@@ -52,6 +52,7 @@ config.primary.address = '[address]';
 config.primary.coin = {};
 config.primary.coin.name = 'Firocoin';
 config.primary.coin.symbol = 'FIRO';
+config.primary.coin.algorithm = 'firopow';
 
 // Daemon Configuration
 config.primary.daemons = [];
